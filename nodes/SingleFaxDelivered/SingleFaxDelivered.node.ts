@@ -1,11 +1,13 @@
 import type {
   IDataObject,
+  IHookFunctions,
   INodeType,
   INodeTypeDescription,
   IWebhookFunctions,
   IWebhookResponseData,
 } from 'n8n-workflow'
-import { NodeOperationError } from 'n8n-workflow'
+import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow'
+import { singlefaxIcon } from '../icons'
 import { headerValue, rawRequestBody, verifySingleFaxSignature } from '../../src/api'
 
 const DELIVERY_EVENTS = new Set(['fax.delivered', 'fax.failed'])
@@ -14,13 +16,14 @@ export class SingleFaxDelivered implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'SingleFax Fax Delivered',
     name: 'singleFaxDelivered',
-    icon: 'file:singlefax.svg',
+    icon: singlefaxIcon,
     group: ['trigger'],
     version: 1,
+    subtitle: 'Webhook',
     description: 'Starts when SingleFax reports fax.delivered or fax.failed. Paste this production URL into Dashboard → Webhooks and store the signing secret on the credential. Not for protected health information.',
     defaults: { name: 'On Fax Delivered' },
     inputs: [],
-    outputs: ['main'],
+    outputs: [NodeConnectionTypes.Main],
     credentials: [{ name: 'singleFaxApi', required: true }],
     webhooks: [
       {
@@ -38,6 +41,21 @@ export class SingleFaxDelivered implements INodeType {
         default: '',
       },
     ],
+  }
+
+  webhookMethods = {
+    default: {
+      async checkExists(this: IHookFunctions): Promise<boolean> {
+        return true
+      },
+      async create(this: IHookFunctions): Promise<boolean> {
+        // SingleFax registers webhook URLs in the dashboard; there is no API to create them.
+        return true
+      },
+      async delete(this: IHookFunctions): Promise<boolean> {
+        return true
+      },
+    },
   }
 
   async webhook(this: IWebhookFunctions): Promise<IWebhookResponseData> {

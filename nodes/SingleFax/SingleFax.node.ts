@@ -6,7 +6,8 @@ import type {
   INodeType,
   INodeTypeDescription,
 } from 'n8n-workflow'
-import { NodeOperationError } from 'n8n-workflow'
+import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow'
+import { singlefaxIcon } from '../icons'
 import {
   contentTypeForFilename,
   createClient,
@@ -25,14 +26,15 @@ export class SingleFax implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'SingleFax',
     name: 'singleFax',
-    icon: 'file:singlefax.svg',
+    icon: singlefaxIcon,
     group: ['transform'],
     version: 1,
     subtitle: '={{$parameter["operation"]}}',
     description: `Send a fax, check status, or read the inbox. ${PHI_NOTICE}`,
     defaults: { name: 'SingleFax' },
-    inputs: ['main'],
-    outputs: ['main'],
+    usableAsTool: true,
+    inputs: [NodeConnectionTypes.Main],
+    outputs: [NodeConnectionTypes.Main],
     credentials: [{ name: 'singleFaxApi', required: true }],
     properties: [
       {
@@ -48,11 +50,11 @@ export class SingleFax implements INodeType {
         noDataExpression: true,
         default: 'send',
         options: [
-          { name: 'Send Fax', value: 'send', action: 'Send a fax' },
-          { name: 'Get Fax Status', value: 'status', action: 'Get fax status' },
-          { name: 'Quote Fax', value: 'quote', action: 'Quote a fax' },
           { name: 'Get Credits', value: 'credits', action: 'Get credits' },
+          { name: 'Get Fax Status', value: 'status', action: 'Get fax status' },
           { name: 'List Received Faxes', value: 'listReceived', action: 'List received faxes' },
+          { name: 'Quote Fax', value: 'quote', action: 'Quote a fax' },
+          { name: 'Send Fax', value: 'send', action: 'Send a fax' },
         ],
       },
       {
@@ -120,7 +122,8 @@ export class SingleFax implements INodeType {
         name: 'limit',
         type: 'number',
         typeOptions: { minValue: 1, maxValue: 50 },
-        default: 20,
+        default: 50,
+        description: 'Max number of results to return',
         displayOptions: { show: { operation: ['listReceived'] } },
       },
       {
@@ -128,7 +131,7 @@ export class SingleFax implements INodeType {
         name: 'cursor',
         type: 'string',
         default: '',
-        description: 'nextCursor from a previous page. Leave empty for the first page.',
+        description: 'Next cursor from a previous page. Leave empty for the first page.',
         displayOptions: { show: { operation: ['listReceived'] } },
       },
     ],
@@ -200,8 +203,13 @@ export class SingleFax implements INodeType {
           returnData.push({ json: { error: message }, pairedItem: { item: i } })
           continue
         }
-        if (error instanceof NodeOperationError) throw error
-        const message = error instanceof SingleFaxApiError ? error.message : error instanceof Error ? error.message : String(error)
+        const message = error instanceof SingleFaxApiError
+          ? error.message
+          : error instanceof NodeOperationError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : String(error)
         throw new NodeOperationError(this.getNode(), message, { itemIndex: i })
       }
     }

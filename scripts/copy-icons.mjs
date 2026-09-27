@@ -3,10 +3,14 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const src = join(root, 'assets', 'singlefax.svg')
-const folders = ['SingleFax', 'SingleFaxReceived', 'SingleFaxDelivered']
-for (const folder of folders) {
-  const destDir = join(root, 'dist', 'nodes', folder)
+const iconNames = ['singlefax.svg', 'singlefax.dark.svg']
+const targets = [
+  join(root, 'dist', 'credentials'),
+  ...['SingleFax', 'SingleFaxReceived', 'SingleFaxDelivered'].map((folder) => join(root, 'dist', 'nodes', folder)),
+]
+for (const destDir of targets) {
   mkdirSync(destDir, { recursive: true })
-  copyFileSync(src, join(destDir, 'singlefax.svg'))
+  for (const name of iconNames) {
+    copyFileSync(join(root, 'assets', name), join(destDir, name))
+  }
 }

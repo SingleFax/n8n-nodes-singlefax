@@ -5,7 +5,8 @@ import type {
   INodeTypeDescription,
   IPollFunctions,
 } from 'n8n-workflow'
-import { NodeOperationError } from 'n8n-workflow'
+import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow'
+import { singlefaxIcon } from '../icons'
 import {
   createClient,
   selectNewReceivedFaxes,
@@ -18,13 +19,14 @@ export class SingleFaxReceived implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'SingleFax Received Fax',
     name: 'singleFaxReceived',
-    icon: 'file:singlefax.svg',
+    icon: singlefaxIcon,
     group: ['trigger'],
     version: 1,
+    subtitle: 'Poll inbox',
     description: 'Starts when a new fax is in the inbox. The first run records faxes already there and does not emit them. Not for protected health information.',
     defaults: { name: 'On Received Fax' },
     inputs: [],
-    outputs: ['main'],
+    outputs: [NodeConnectionTypes.Main],
     credentials: [{ name: 'singleFaxApi', required: true }],
     polling: true,
     properties: [

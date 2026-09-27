@@ -4,11 +4,14 @@ import type {
   ICredentialType,
   INodeProperties,
 } from 'n8n-workflow'
+import { singlefaxIcon } from '../nodes/icons'
 
 export class SingleFaxApi implements ICredentialType {
   name = 'singleFaxApi'
 
   displayName = 'SingleFax API'
+
+  icon = singlefaxIcon
 
   documentationUrl = 'https://singlefax.com/developers'
 

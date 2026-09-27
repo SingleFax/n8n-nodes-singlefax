@@ -237,7 +237,7 @@ function formatError(status: number, body: unknown): string {
 }
 
 export function createClient(opts: { apiKey: string; fetch?: FetchLike; origin?: string }) {
-  const doFetch = opts.fetch ?? globalThis.fetch
+  const doFetch = opts.fetch ?? fetch
   const origin = opts.origin ?? SINGLEFAX_API_ORIGIN
 
   async function request<T>(input: ApiRequest): Promise<T> {
@@ -306,7 +306,7 @@ export async function sendFax(
 
 export async function downloadPublicHttps(
   rawUrl: string,
-  fetchImpl: FetchLike = globalThis.fetch,
+  fetchImpl: FetchLike = fetch,
 ): Promise<{ bytes: Uint8Array; contentType: string; filename: string }> {
   let current = assertPublicHttpsUrl(rawUrl).toString()
   for (let hop = 0; hop < 3; hop++) {

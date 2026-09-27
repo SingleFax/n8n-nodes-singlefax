@@ -38,21 +38,7 @@ The node checks the HMAC over the raw request body. Other event types are acknow
 
 ## Install
 
-After the package is on npm:
-
 - Self-hosted n8n: Settings → Community nodes → install `@singlefax/n8n-nodes-singlefax`.
 - n8n Cloud: the node appears in the nodes panel after n8n verifies it.
 
 Example workflow: [`workflows/send-fax.json`](workflows/send-fax.json). Replace the destination number and attach your own file.
-
-## Publish
-
-The app repository is private. n8n verification needs this package in the public repo `SingleFax/n8n-nodes-singlefax`, published by GitHub Actions with npm provenance.
-
-1. Create that public repo and copy this folder into it (without `node_modules` or `dist`).
-2. Commit a `package-lock.json` (`npm install` in that repo).
-3. On the `@singlefax` package, add a Trusted Publisher: GitHub Actions, owner `SingleFax`, repo `n8n-nodes-singlefax`, workflow `publish.yml`.
-4. Tag `v0.1.0`. Actions publishes the package. A laptop `npm publish` will not pass Creator Portal review.
-5. Submit the package on the existing Creator Portal account.
-
-`author.email` is `info@singlefax.com` so the portal can match the account.

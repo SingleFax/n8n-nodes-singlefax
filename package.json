@@ -1,5 +1,8 @@
 {
-  "name": "n8n-nodes-singlefax",
+  "name": "@singlefax/n8n-nodes-singlefax",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "0.1.0",
   "description": "Send a fax from n8n with SingleFax. Charged only when delivery succeeds. Not for protected health information.",
   "keywords": [

@@ -19,7 +19,7 @@
       },
       "id": "9a1b2c3d-4e5f-6789-abcd-ef0123456789",
       "name": "Send Fax",
-      "type": "n8n-nodes-singlefax.singleFax",
+      "type": "@singlefax/n8n-nodes-singlefax.singleFax",
       "typeVersion": 1,
       "position": [280, 0],
       "credentials": {

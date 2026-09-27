@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Send a fax from n8n with SingleFax. Charged only when delivery succeeds. Not for protected health information.",
   "keywords": [
     "n8n-community-node-package",

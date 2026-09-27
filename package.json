@@ -1,0 +1,51 @@
+{
+  "name": "n8n-nodes-singlefax",
+  "version": "0.1.0",
+  "description": "Send a fax from n8n with SingleFax. Charged only when delivery succeeds. Not for protected health information.",
+  "keywords": [
+    "n8n-community-node-package",
+    "singlefax",
+    "fax"
+  ],
+  "license": "MIT",
+  "homepage": "https://singlefax.com/developers",
+  "author": {
+    "name": "SingleFax",
+    "email": "info@singlefax.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SingleFax/n8n-nodes-singlefax.git"
+  },
+  "main": "dist/nodes/SingleFax/SingleFax.node.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-icons.mjs",
+    "test": "tsx --test src/*.test.ts",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "workflows"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/SingleFaxApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/SingleFax/SingleFax.node.js",
+      "dist/nodes/SingleFaxReceived/SingleFaxReceived.node.js",
+      "dist/nodes/SingleFaxDelivered/SingleFaxDelivered.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.4",
+    "n8n-workflow": "2.16.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

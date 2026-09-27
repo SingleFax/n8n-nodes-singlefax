@@ -1,0 +1,58 @@
+# SingleFax for n8n
+
+Send a fax from an n8n workflow. Quote, status, credits, and the received-fax inbox use the same API key. You are charged only when delivery succeeds.
+
+This is not Secure Mode. Do not send protected health information. HIPAA stays on the SingleFax website.
+
+## Nodes
+
+| Node | What it does |
+| --- | --- |
+| SingleFax | Send Fax, Get Fax Status, Quote Fax, Get Credits, List Received Faxes |
+| SingleFax Received Fax | Polls the inbox. The first run records faxes already there and does not emit them. |
+| SingleFax Fax Delivered | Webhook for `fax.delivered` and `fax.failed`. Verifies `SingleFax-Signature`. |
+
+Send Fax takes the binary file from the previous node, or a public `https` URL. It uploads the original file, then creates the fax. Do not convert the file to PDF first.
+
+## Credential
+
+Create an API key at https://singlefax.com/dashboard.
+
+| Operation | Scope |
+| --- | --- |
+| Send Fax | `fax:send` |
+| Get Fax Status, Quote Fax | `fax:read` |
+| List Received Faxes, On Received Fax | `inbox:read` |
+| Get Credits | `credits:read` |
+
+The key stays in the n8n credential. This package does not contain one.
+
+## Delivery trigger
+
+1. Activate the workflow so n8n shows the production webhook URL.
+2. Add that URL at https://singlefax.com/dashboard/webhooks.
+3. Enable `fax.delivered` and `fax.failed`.
+4. Paste the signing secret (`whsec_…`, shown once) into the credential field **Webhook Signing Secret**.
+
+The node checks the HMAC over the raw request body. Other event types are acknowledged and do not start the workflow.
+
+## Install
+
+After the package is on npm:
+
+- Self-hosted n8n: Settings → Community nodes → install `n8n-nodes-singlefax`.
+- n8n Cloud: the node appears in the nodes panel after n8n verifies it.
+
+Example workflow: [`workflows/send-fax.json`](workflows/send-fax.json). Replace the destination number and attach your own file.
+
+## Publish
+
+The app repository is private. n8n verification needs this package in the public repo `SingleFax/n8n-nodes-singlefax`, published by GitHub Actions with npm provenance.
+
+1. Create that public repo and copy this folder into it (without `node_modules` or `dist`).
+2. Commit a `package-lock.json` (`npm install` in that repo).
+3. On npm, add a Trusted Publisher: GitHub Actions, owner `SingleFax`, repo `n8n-nodes-singlefax`, workflow `publish.yml`.
+4. Tag `v0.1.0`. Actions publishes the package. A laptop `npm publish` will not pass Creator Portal review.
+5. Submit the package on the existing Creator Portal account.
+
+`author.email` is `info@singlefax.com` so the portal can match the account.

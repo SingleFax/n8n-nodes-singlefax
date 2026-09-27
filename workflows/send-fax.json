@@ -1,0 +1,50 @@
+{
+  "name": "Send a fax with SingleFax",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "8f0c1a2e-6b4d-4e1a-9c3f-1a2b3c4d5e6f",
+      "name": "When clicking Test workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "+14155552671",
+        "source": "binary",
+        "binaryPropertyName": "data",
+        "cover": false
+      },
+      "id": "9a1b2c3d-4e5f-6789-abcd-ef0123456789",
+      "name": "Send Fax",
+      "type": "n8n-nodes-singlefax.singleFax",
+      "typeVersion": 1,
+      "position": [280, 0],
+      "credentials": {
+        "singleFaxApi": {
+          "id": "",
+          "name": "SingleFax API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking Test workflow": {
+      "main": [
+        [
+          {
+            "node": "Send Fax",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

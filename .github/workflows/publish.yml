@@ -4,22 +4,39 @@
 #   Workflow filename: publish.yml
 #   Environment name: (leave empty)
 #   Allowed actions: npm publish
-# The package must already exist before that form can be saved. Provenance is automatic.
 # Docs: https://docs.npmjs.com/trusted-publishers
 
 name: Publish
 
 on:
   push:
+    branches: [main]
     tags:
       - "v*.*.*"
+    paths:
+      - "assets/**"
+      - "credentials/**"
+      - "nodes/**"
+      - "src/**"
+      - "scripts/**"
+      - "workflows/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.build.json"
+      - ".github/workflows/publish.yml"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish @singlefax/n8n-nodes-singlefax to npm (OIDC trusted publisher)"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
-  publish:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -30,4 +47,136 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-      - run: npm publish --access public
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    if: >
+      github.actor != 'github-actions[bot]' && (
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true' && github.ref == 'refs/heads/main')
+        || (
+          fromJSON(github.run_attempt) == 1 && (
+            (github.event_name == 'push' && github.ref == 'refs/heads/main')
+            || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+          )
+        )
+      )
+    concurrency:
+      group: npm-singlefax-n8n
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Gate npm publish
+        id: gate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          go=false
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            go=true
+          elif [[ "$REF" == refs/tags/v* ]]; then
+            go=true
+          elif [ "$EVENT_NAME" = "push" ] && [ "$REF" = "refs/heads/main" ]; then
+            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              echo "Skip: missing before SHA"
+            elif git diff --name-only "$BEFORE" "$SHA" | grep -qEv '^(\.github/workflows/publish\.yml|README\.md|LICENSE)$'; then
+              go=true
+            else
+              echo "Skip: docs or workflow-only change"
+            fi
+          fi
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v7
+        if: steps.gate.outputs.go == 'true'
+        with:
+          node-version: "24"
+
+      - name: Require npm CLI for OIDC publish
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          npm install -g npm@latest
+          npm --version
+          node -e "const [maj, min, pat] = process.versions.node.split('.').map(Number); if (maj < 22 || (maj === 22 && min < 14)) { console.error('Need Node >= 22.14'); process.exit(1) }"
+
+      - name: Install
+        if: steps.gate.outputs.go == 'true'
+        run: npm ci
+
+      - name: Bump patch version
+        if: steps.gate.outputs.go == 'true'
+        id: bump
+        env:
+          TAG_VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+        run: |
+          set -euo pipefail
+          PUBLISHED="$(npm view @singlefax/n8n-nodes-singlefax version 2>/dev/null || echo 0.0.0)"
+          export PUBLISHED
+          NEXT="$(node --input-type=module << 'EOF'
+          import { readFileSync, writeFileSync } from 'node:fs'
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
+          const published = process.env.PUBLISHED || '0.0.0'
+          const tag = (process.env.TAG_VERSION || '').replace(/^v/, '')
+          const parts = (v) => v.split('.').map((n) => Number.parseInt(n, 10) || 0)
+          const cmp = (a, b) => {
+            const [majA, minA, patA] = parts(a)
+            const [majB, minB, patB] = parts(b)
+            return majA - majB || minA - minB || patA - patB
+          }
+          let next
+          if (tag) {
+            next = tag
+          } else if (cmp(pkg.version, published) > 0) {
+            next = pkg.version
+          } else {
+            const base = cmp(pkg.version, published) >= 0 ? pkg.version : published
+            const [maj, min, pat] = parts(base)
+            next = `${maj}.${min}.${pat + 1}`
+          }
+          pkg.version = next
+          writeFileSync('package.json', `${JSON.stringify(pkg, null, 2)}\n`)
+          process.stdout.write(next)
+          EOF
+          )"
+          if [ "$NEXT" = "$PUBLISHED" ]; then
+            echo "npm already has $PUBLISHED — bump package.json or tag a new version"
+            exit 1
+          fi
+          npm install --package-lock-only --ignore-scripts
+          echo "version=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "npm was $PUBLISHED; publishing $NEXT"
+
+      - name: Commit version bump
+        if: steps.gate.outputs.go == 'true' && github.ref == 'refs/heads/main'
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(n8n): ${VERSION} [skip ci]"
+          git fetch origin main
+          git rebase origin/main
+          git push origin "HEAD:refs/heads/main"
+
+      - name: Test and build release tree
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          npm test
+          npm run build
+
+      - name: Publish
+        if: steps.gate.outputs.go == 'true'
+        run: npm publish --access public

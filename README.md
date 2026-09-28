@@ -42,3 +42,7 @@ The node checks the HMAC over the raw request body. Other event types are acknow
 - n8n Cloud: the node appears in the nodes panel after n8n verifies it.
 
 Example workflow: [`workflows/send-fax.json`](workflows/send-fax.json). Replace the destination number and attach your own file.
+
+## Release
+
+Merging to `main` runs tests, bumps the patch version if npm is behind, commits `chore(n8n): x.y.z [skip ci]`, and publishes with GitHub Actions provenance. Push a `vX.Y.Z` tag to publish that exact version without a patch bump. Manual publish: Actions → Publish → Run workflow with **publish** checked.
